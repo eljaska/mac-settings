@@ -1,0 +1,8 @@
+{
+  "aws_auth_instructions": "<get AWS authentication process — ask user to run `aws sso login` with their profile/session, then any post-login script>",
+  "work_log_dir": "<path to directory where daily logs live, e.g. ~/work-log>",
+  "meetings_dir": "<path to directory where meeting transcripts are filed, e.g. ~/work-log/meetings>",
+  "context_file": "<path to a CONTEXT.md-style file with ongoing project context, or leave blank to skip>",
+  "watched_slack_channels": [],
+  "watched_branch_patterns": []
+}
