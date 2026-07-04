@@ -1,0 +1,9 @@
+[user]
+	name = Ender Jaska
+[core]
+	editor = code --wait
+[credential]
+	helper = !gh auth git-credential
+# Per-machine identity overrides (user.email) live here; not tracked.
+[include]
+	path = ~/.gitconfig.local

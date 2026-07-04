@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pull Requests and Commits"
+  short_description: "Git/GitHub workflows: commit messages, PR structure, reviewer fixups"
+  default_prompt: "Use $pr to draft a commit message or work on a pull request."
