@@ -201,6 +201,18 @@ defaults write -g com.apple.swipescrolldirection -bool false
 # Menu bar: never auto-hide.
 defaults write NSGlobalDomain _HIHideMenuBar -bool false
 
+# Touch ID for sudo: install pam config that enables pam_tid.so.
+# Overrides sudo_local.template (which ships with the auth line commented).
+# Requires sudo; will prompt for password if not cached.
+pam_src="$REPO_ROOT/pam/sudo_local"
+pam_dst="/etc/pam.d/sudo_local"
+if [ ! -f "$pam_dst" ] || ! cmp -s "$pam_src" "$pam_dst"; then
+    log "Installing $pam_dst for Touch ID (may prompt for sudo password)..."
+    sudo install -m 644 -o root -g wheel "$pam_src" "$pam_dst"
+else
+    log "$pam_dst already up to date; skipping."
+fi
+
 # Power management. Requires sudo; will prompt for password if not cached.
 log "Configuring display sleep timers (may prompt for sudo password)..."
 sudo pmset -b displaysleep 5
