@@ -34,6 +34,57 @@ cc() {
   FORCE_HYPERLINK=1 claude --model 'claude-opus-4-7[1m]'
 }
 
+# Start kata with every jj-managed repo under ~/Developer/*/* as a
+# workspace. Pulls the kata repo first and rebuilds/reinstalls if
+# HEAD moved.
+kk() {
+  local kata_repo="$HOME/Developer/devtools/kata"
+  if [[ -d "$kata_repo/.git" ]]; then
+    local before after
+    before=$(git -C "$kata_repo" rev-parse HEAD 2>/dev/null)
+    echo "kk: pulling $kata_repo..."
+    if ! git -C "$kata_repo" pull --ff-only; then
+      echo "kk: git pull failed; continuing with existing binary" >&2
+    else
+      after=$(git -C "$kata_repo" rev-parse HEAD 2>/dev/null)
+      if [[ -n "$before" && "$before" != "$after" ]]; then
+        echo "kk: HEAD $before -> $after, rebuilding..."
+        if ! cargo install --path "$kata_repo/crates/kata_server" --force; then
+          echo "kk: cargo install failed; aborting" >&2
+          return 1
+        fi
+      else
+        echo "kk: already up to date"
+      fi
+    fi
+  else
+    echo "kk: $kata_repo is not a git repo; skipping self-update" >&2
+  fi
+
+  local dev_dir="$HOME/Developer"
+  local workspaces=()
+  local d name
+  setopt local_options nullglob
+  for d in "$dev_dir"/*/*/; do
+    [[ -d "${d}.jj" ]] || continue
+    name="${${d%/}##*/}"
+    # Skip maudebox-created variants
+    [[ "$name" == *.* ]] && continue
+    workspaces+=(--workspace "${name}=${d%/}")
+  done
+
+  if (( ${#workspaces[@]} == 0 )); then
+    echo "No jj repos found under $dev_dir"
+    return 1
+  fi
+
+  kata serve \
+    "${workspaces[@]}" \
+    --data ~/.local/share/kata \
+    --author "Ender Jaska <eljaska@gmail.com>" \
+    --bind 127.0.0.1:7878
+}
+
 xx() {
   # Pairs of (label, command). Regular array preserves order, unlike an
   # associative array.
