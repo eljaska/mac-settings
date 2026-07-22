@@ -85,6 +85,48 @@ kk() {
     --bind 127.0.0.1:7878
 }
 
+# Build and launch jjuicy (a GUI for jj). Pulls the jjuicy repo
+# first and rebuilds/reinstalls if HEAD moved. Returns once the
+# app is spawned — the Tauri process lives on its own after that.
+jjuicy() {
+  local jjuicy_repo="$HOME/Developer/devtools/jjuicy"
+  if [[ -d "$jjuicy_repo/.git" ]]; then
+    local before after
+    before=$(git -C "$jjuicy_repo" rev-parse HEAD 2>/dev/null)
+    echo "jjuicy: pulling $jjuicy_repo..."
+    if ! git -C "$jjuicy_repo" pull --ff-only; then
+      echo "jjuicy: git pull failed; continuing with existing binary" >&2
+    else
+      after=$(git -C "$jjuicy_repo" rev-parse HEAD 2>/dev/null)
+      if [[ -n "$before" && "$before" != "$after" ]]; then
+        echo "jjuicy: HEAD $before -> $after, rebuilding..."
+        # cargo tauri build produces both target/release/ju AND the
+        # .app bundle in one compile — Tauri.toml's beforeBuildCommand
+        # handles `npm run build` for us. The tauri CLI ships as a
+        # devDependency, so npx picks it up after npm install.
+        (
+          cd "$jjuicy_repo" || exit 1
+          npm install --silent && \
+          npx tauri build && \
+          mkdir -p "$HOME/.cargo/bin" && \
+          install -m 755 target/release/ju "$HOME/.cargo/bin/ju" && \
+          ditto target/release/bundle/macos/jjuicy.app /Applications/jjuicy.app
+        ) || {
+          echo "jjuicy: rebuild failed; aborting" >&2
+          return 1
+        }
+      else
+        echo "jjuicy: already up to date"
+      fi
+    fi
+  else
+    echo "jjuicy: $jjuicy_repo is not a git repo; skipping self-update" >&2
+  fi
+
+  nohup ju gui >/dev/null 2>&1 &
+  disown
+}
+
 xx() {
   # Pairs of (label, command). Regular array preserves order, unlike an
   # associative array.
