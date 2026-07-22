@@ -73,4 +73,9 @@ xx() {
   done
 }
 
+login() {
+  ZSH="$ZSH" command zsh -f "$ZSH/tools/upgrade.sh" -i -v default
+  brew upgrade
+}
+
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"

@@ -16,6 +16,10 @@ brew "gpg"
 brew "jj"
 brew "jq"
 brew "just"
+# Modern rsync (3.4+); replaces Apple's ancient built-in which lacks
+# --info=progress2 and other current flags. Installed at
+# /opt/homebrew/bin/rsync, so a Homebrew-first PATH picks it up.
+brew "rsync"
 brew "wget"
 brew "yq"
 
@@ -24,7 +28,7 @@ brew "micro"
 cask "visual-studio-code"
 
 # AI tooling
-brew "claude-code"
+cask "claude-code"
 
 # Menu bar
 cask "meetingbar"
@@ -37,3 +41,15 @@ cask "karabiner-elements"
 
 # Languages
 brew "go"
+
+# Notes / knowledge
+cask "obsidian"
+
+# Browsers
+cask "mullvad-browser"
+
+# VPN
+cask "protonvpn"
+
+# Media
+cask "handbrake"

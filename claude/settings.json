@@ -15,5 +15,6 @@
     "swift-lsp@claude-plugins-official": true
   },
   "effortLevel": "high",
-  "tui": "default"
+  "tui": "default",
+  "theme": "auto"
 }
