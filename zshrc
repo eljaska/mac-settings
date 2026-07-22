@@ -73,9 +73,44 @@ xx() {
   done
 }
 
+# Sync each fork under ~/Developer/devtools with its upstream by
+# pushing upstream/<default-branch> straight to origin. Uses raw git
+# (no gh API call) so it survives forks whose upstream lives in a
+# SAML-protected org the local `gh` token isn't authorized for.
+sync_devtools() {
+  local base="$HOME/Developer/devtools"
+  [ -d "$base" ] || return 0
+  setopt local_options nullglob
+  local dir
+  for dir in "$base"/*/; do
+    [ -d "$dir/.git" ] || continue
+    echo "==> Syncing $(basename "$dir")..."
+    (
+      cd "$dir" || exit 1
+      git remote get-url upstream >/dev/null 2>&1 || {
+        echo "    no upstream remote; skipping"
+        exit 0
+      }
+      local branch
+      branch=$(git ls-remote --symref origin HEAD 2>/dev/null \
+        | awk '/^ref:/ {sub("refs/heads/", "", $2); print $2; exit}')
+      [ -n "$branch" ] || {
+        echo "    cannot determine default branch; skipping"
+        exit 0
+      }
+      git fetch upstream --quiet
+      if ! git push --quiet origin "upstream/$branch:$branch"; then
+        echo "    push failed (fork may have diverged from upstream)"
+      fi
+      [ -d .jj ] && jj git fetch --all-remotes
+    )
+  done
+}
+
 login() {
   ZSH="$ZSH" command zsh -f "$ZSH/tools/upgrade.sh" -i -v default
   brew upgrade
+  sync_devtools
 }
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
