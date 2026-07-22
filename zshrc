@@ -204,6 +204,18 @@ login() {
   ZSH="$ZSH" command zsh -f "$ZSH/tools/upgrade.sh" -i -v default
   brew upgrade
   sync_devtools
+
+  # Spin off a new iTerm window that builds+launches jjuicy in the
+  # background, then runs kata in the foreground. Keeps the current
+  # shell free for interactive work.
+  osascript <<'AS'
+tell application "iTerm"
+    create window with default profile
+    tell current session of current window
+        write text "jjuicy && kk"
+    end tell
+end tell
+AS
 }
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
