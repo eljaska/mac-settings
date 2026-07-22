@@ -196,6 +196,15 @@ defaults write -g NSAutomaticCapitalizationEnabled -bool false
 defaults write -g NSAutomaticDashSubstitutionEnabled -bool false
 defaults write -g NSAutomaticPeriodSubstitutionEnabled -bool false
 defaults write -g NSAutomaticQuoteSubstitutionEnabled -bool false
+# Trackpad: disable "natural" scroll direction (scroll content the classic way).
+defaults write -g com.apple.swipescrolldirection -bool false
+# Menu bar: never auto-hide.
+defaults write NSGlobalDomain _HIHideMenuBar -bool false
+
+# Power management. Requires sudo; will prompt for password if not cached.
+log "Configuring display sleep timers (may prompt for sudo password)..."
+sudo pmset -b displaysleep 5
+sudo pmset -c displaysleep 10
 
 log "Bootstrap complete. Restart your terminal or run: source ~/.zshrc"
 log "Remember to run 'gh auth login' to authenticate with GitHub."
