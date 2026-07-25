@@ -37,6 +37,8 @@ cc() {
 # HEAD moved.
 kk() {
   local kata_repo="$HOME/Developer/devtools/kata"
+  local needs_build=false
+
   if [[ -d "$kata_repo/.git" ]]; then
     local before after
     before=$(git -C "$kata_repo" rev-parse HEAD 2>/dev/null)
@@ -45,18 +47,30 @@ kk() {
       echo "kk: git pull failed; continuing with existing binary" >&2
     else
       after=$(git -C "$kata_repo" rev-parse HEAD 2>/dev/null)
-      if [[ -n "$before" && "$before" != "$after" ]]; then
-        echo "kk: HEAD $before -> $after, rebuilding..."
-        if ! cargo install --path "$kata_repo/crates/kata_server" --force; then
-          echo "kk: cargo install failed; aborting" >&2
-          return 1
-        fi
-      else
-        echo "kk: already up to date"
-      fi
+      [[ -n "$before" && "$before" != "$after" ]] && {
+        echo "kk: HEAD $before -> $after"
+        needs_build=true
+      }
     fi
   else
     echo "kk: $kata_repo is not a git repo; skipping self-update" >&2
+  fi
+
+  # Also build when the binary isn't there yet — first run after a
+  # fresh clone or a ~/.cargo/bin cleanup.
+  if ! command -v kata >/dev/null 2>&1; then
+    echo "kk: kata binary missing"
+    needs_build=true
+  fi
+
+  if $needs_build; then
+    echo "kk: (re)building kata..."
+    if ! cargo install --path "$kata_repo/crates/kata_server" --force; then
+      echo "kk: cargo install failed; aborting" >&2
+      return 1
+    fi
+  else
+    echo "kk: already up to date"
   fi
 
   local dev_dir="$HOME/Developer"
@@ -88,6 +102,10 @@ kk() {
 # app is spawned — the Tauri process lives on its own after that.
 jjuicy() {
   local jjuicy_repo="$HOME/Developer/devtools/jjuicy"
+  local ju_bin="$HOME/.cargo/bin/ju"
+  local ju_app="/Applications/jjuicy.app"
+  local needs_build=false
+
   if [[ -d "$jjuicy_repo/.git" ]]; then
     local before after
     before=$(git -C "$jjuicy_repo" rev-parse HEAD 2>/dev/null)
@@ -96,29 +114,41 @@ jjuicy() {
       echo "jjuicy: git pull failed; continuing with existing binary" >&2
     else
       after=$(git -C "$jjuicy_repo" rev-parse HEAD 2>/dev/null)
-      if [[ -n "$before" && "$before" != "$after" ]]; then
-        echo "jjuicy: HEAD $before -> $after, rebuilding..."
-        # cargo tauri build produces both target/release/ju AND the
-        # .app bundle in one compile — Tauri.toml's beforeBuildCommand
-        # handles `npm run build` for us. The tauri CLI ships as a
-        # devDependency, so npx picks it up after npm install.
-        (
-          cd "$jjuicy_repo" || exit 1
-          npm install --silent && \
-          npx tauri build && \
-          mkdir -p "$HOME/.cargo/bin" && \
-          install -m 755 target/release/ju "$HOME/.cargo/bin/ju" && \
-          ditto target/release/bundle/macos/jjuicy.app /Applications/jjuicy.app
-        ) || {
-          echo "jjuicy: rebuild failed; aborting" >&2
-          return 1
-        }
-      else
-        echo "jjuicy: already up to date"
-      fi
+      [[ -n "$before" && "$before" != "$after" ]] && {
+        echo "jjuicy: HEAD $before -> $after"
+        needs_build=true
+      }
     fi
   else
     echo "jjuicy: $jjuicy_repo is not a git repo; skipping self-update" >&2
+  fi
+
+  # Also build when either artifact is missing — first run after a
+  # fresh clone, /Applications wipe, or ~/.cargo/bin cleanup.
+  if [[ ! -x "$ju_bin" || ! -d "$ju_app" ]]; then
+    echo "jjuicy: ju binary or /Applications/jjuicy.app missing"
+    needs_build=true
+  fi
+
+  if $needs_build; then
+    echo "jjuicy: (re)building..."
+    # cargo tauri build produces both target/release/ju AND the .app
+    # bundle in one compile — Tauri.toml's beforeBuildCommand handles
+    # `npm run build` for us. The tauri CLI ships as a devDependency,
+    # so npx picks it up after npm install.
+    (
+      cd "$jjuicy_repo" || exit 1
+      npm install --silent && \
+      npx tauri build && \
+      mkdir -p "$HOME/.cargo/bin" && \
+      install -m 755 target/release/ju "$ju_bin" && \
+      ditto target/release/bundle/macos/jjuicy.app "$ju_app"
+    ) || {
+      echo "jjuicy: rebuild failed; aborting" >&2
+      return 1
+    }
+  else
+    echo "jjuicy: already up to date"
   fi
 
   nohup ju gui >/dev/null 2>&1 &
