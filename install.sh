@@ -110,6 +110,59 @@ if [ ! -d "$HOME/Developer" ]; then
     mkdir -p "$HOME/Developer"
 fi
 
+# ~/Developer/devtools: personal forks + their built binaries. Both
+# repos are jj-colocated so they participate in sync_devtools too.
+devtools_dir="$HOME/Developer/devtools"
+mkdir -p "$devtools_dir"
+
+clone_devtool_fork() {
+    name="$1"
+    fork_url="$2"
+    upstream_url="$3"
+    repo="$devtools_dir/$name"
+    if [ ! -d "$repo/.git" ]; then
+        log "Cloning $name into $repo..."
+        jj git clone --colocate "$fork_url" "$repo"
+        (
+            cd "$repo"
+            jj git remote add upstream "$upstream_url"
+            jj git fetch --remote upstream
+        )
+    else
+        log "$name already cloned; skipping."
+    fi
+}
+
+clone_devtool_fork kata   https://github.com/eljaska/kata.git   https://github.com/martint/kata.git
+clone_devtool_fork jjuicy https://github.com/eljaska/jjuicy.git https://github.com/starburstdata/jjuicy.git
+
+# Build kata if the binary isn't installed yet.
+if ! command -v kata >/dev/null 2>&1; then
+    log "Building kata (this can take several minutes)..."
+    cargo install --path "$devtools_dir/kata/crates/kata_server" --force
+else
+    log "kata binary already installed; skipping build."
+fi
+
+# Build jjuicy if either the CLI or the .app is missing. cargo tauri
+# build produces both target/release/ju and the .app bundle in one
+# compile via Tauri.toml's beforeBuildCommand.
+ju_bin="$HOME/.cargo/bin/ju"
+ju_app="/Applications/jjuicy.app"
+if [ ! -x "$ju_bin" ] || [ ! -d "$ju_app" ]; then
+    log "Building jjuicy (this can take several minutes)..."
+    (
+        cd "$devtools_dir/jjuicy"
+        npm install --silent
+        npx tauri build
+        mkdir -p "$HOME/.cargo/bin"
+        install -m 755 target/release/ju "$ju_bin"
+        ditto target/release/bundle/macos/jjuicy.app "$ju_app"
+    )
+else
+    log "jjuicy artifacts already present; skipping build."
+fi
+
 # Symlink dotfiles from repo -> home. Existing non-symlink files are backed up.
 link_dotfile() {
     src="$REPO_ROOT/$1"
