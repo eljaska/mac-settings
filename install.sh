@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Bootstrap script for a fresh Mac.
+# Setup + sync script for a personal Mac. Safe to re-run at any time
+# to reset the machine's state to match this repo.
 # Run with: curl -fsSL https://raw.githubusercontent.com/eljaska/mac-settings/main/install.sh | sh
 #       or: sh install.sh
 #
@@ -51,6 +52,14 @@ fi
 # Homebrew packages from Brewfile.
 log "Installing Homebrew packages from Brewfile..."
 brew bundle --file="$REPO_ROOT/Brewfile"
+# Show — but do not remove — anything installed that isn't listed
+# in the Brewfile. Reviewing this list is the manual step: add
+# things you want to keep to the Brewfile, then run
+#   brew bundle cleanup --file=Brewfile --force
+# yourself to prune the rest. Doing this destructive step
+# unattended in the script bit us once already.
+log "Listing Homebrew packages not in Brewfile (informational, not removed)..."
+brew bundle cleanup --file="$REPO_ROOT/Brewfile" || true
 
 # Oh My Zsh. KEEP_ZSHRC prevents it from overwriting/moving ~/.zshrc,
 # which we manage via symlink below.
@@ -64,17 +73,17 @@ fi
 
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
-# Oh My Zsh custom plugins.
+# Oh My Zsh custom plugins. Wipe the dir so anything we've dropped
+# from the list below (or that was installed out-of-band) actually
+# leaves the system.
+log "Refreshing Oh My Zsh custom plugins..."
+rm -rf "$ZSH_CUSTOM/plugins"
+mkdir -p "$ZSH_CUSTOM/plugins"
+
 clone_plugin() {
     name="$1"
     url="$2"
-    dir="$ZSH_CUSTOM/plugins/$name"
-    if [ ! -d "$dir" ]; then
-        log "Cloning plugin $name..."
-        git clone --depth 1 "$url" "$dir"
-    else
-        log "Plugin $name already present; skipping."
-    fi
+    git clone --depth 1 "$url" "$ZSH_CUSTOM/plugins/$name"
 }
 
 clone_plugin zsh-autosuggestions     https://github.com/zsh-users/zsh-autosuggestions
@@ -212,10 +221,20 @@ else
     log "$pam_dst already up to date; skipping."
 fi
 
-# Power management. Requires sudo; will prompt for password if not cached.
-log "Configuring display sleep timers (may prompt for sudo password)..."
-sudo pmset -b displaysleep 5
-sudo pmset -c displaysleep 10
+# Power management. Skip the (sudo) pmset calls when the current
+# values already match, so a re-run doesn't prompt for auth just to
+# rewrite identical settings.
+current_bat_sleep=$(pmset -g custom \
+    | awk '/^Battery Power/{f=1} /^AC Power/{f=0} f && /^[[:space:]]*displaysleep/{print $2; exit}')
+current_ac_sleep=$(pmset -g custom \
+    | awk '/^AC Power/{f=1} f && /^[[:space:]]*displaysleep/{print $2; exit}')
+if [ "$current_bat_sleep" != "5" ] || [ "$current_ac_sleep" != "10" ]; then
+    log "Configuring display sleep timers (may prompt for sudo password)..."
+    [ "$current_bat_sleep" != "5" ]  && sudo pmset -b displaysleep 5
+    [ "$current_ac_sleep"  != "10" ] && sudo pmset -c displaysleep 10
+else
+    log "Display sleep timers already set (5m battery / 10m charger); skipping."
+fi
 
 log "Bootstrap complete. Restart your terminal or run: source ~/.zshrc"
 log "Remember to run 'gh auth login' to authenticate with GitHub."
