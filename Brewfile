@@ -34,6 +34,7 @@ cask "claude-code"
 cask "orbstack"
 
 # Languages
+brew "bun"
 brew "go"
 brew "node"
 brew "rust"
