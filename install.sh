@@ -81,7 +81,6 @@ clone_plugin zsh-autosuggestions     https://github.com/zsh-users/zsh-autosugges
 clone_plugin zsh-syntax-highlighting https://github.com/zsh-users/zsh-syntax-highlighting.git
 clone_plugin you-should-use          https://github.com/MichaelAquilina/zsh-you-should-use.git
 clone_plugin zsh-bat                 https://github.com/fdellwing/zsh-bat.git
-clone_plugin zsh-nvm                 https://github.com/lukechilds/zsh-nvm
 
 # Oh My Zsh emoji theme (custom; symlinked from repo so edits are tracked).
 mkdir -p "$ZSH_CUSTOM/themes"

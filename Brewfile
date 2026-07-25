@@ -30,26 +30,20 @@ cask "visual-studio-code"
 # AI tooling
 cask "claude-code"
 
-# Menu bar
-cask "meetingbar"
-
 # Containers
 cask "orbstack"
 
-# Input remapping
-cask "karabiner-elements"
-
 # Languages
 brew "go"
-
-# Notes / knowledge
-cask "obsidian"
-
-# Browsers
-cask "mullvad-browser"
-
-# VPN
-cask "protonvpn"
+brew "node"
+brew "rust"
 
 # Media
-cask "handbrake"
+cask "handbrake-app"
+
+# Other Mac apps
+cask "obsidian"
+cask "mullvad-browser"
+cask "protonvpn"
+cask "karabiner-elements"
+cask "meetingbar"

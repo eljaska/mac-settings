@@ -15,8 +15,6 @@ plugins=(
   zsh-syntax-highlighting
   you-should-use
   zsh-bat
-  nvm
-  zsh-nvm
 )
 
 source $ZSH/oh-my-zsh.sh
