@@ -139,7 +139,7 @@ clone_devtool_fork jjuicy https://github.com/eljaska/jjuicy.git https://github.c
 # Build kata if the binary isn't installed yet.
 if ! command -v kata >/dev/null 2>&1; then
     log "Building kata (this can take several minutes)..."
-    cargo install --path "$devtools_dir/kata/crates/kata_server" --force
+    cargo install --path "$devtools_dir/kata/crates/kata-server" --force
 else
     log "kata binary already installed; skipping build."
 fi

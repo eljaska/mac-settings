@@ -65,7 +65,7 @@ kk() {
 
   if $needs_build; then
     echo "kk: (re)building kata..."
-    if ! cargo install --path "$kata_repo/crates/kata_server" --force; then
+    if ! cargo install --path "$kata_repo/crates/kata-server" --force; then
       echo "kk: cargo install failed; aborting" >&2
       return 1
     fi
