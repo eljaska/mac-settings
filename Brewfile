@@ -39,7 +39,7 @@ brew "node"
 brew "rust"
 
 # Media
-cask "handbrake-app"
+brew "handbrake"
 
 # Other Mac apps
 cask "obsidian"
