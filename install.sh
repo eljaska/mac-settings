@@ -150,6 +150,16 @@ fi
 link_into "$REPO_ROOT/claude-statusline/next_meeting.swift" \
           "$HOME/.config/claude-statusline/next_meeting.swift"
 
+# Herdr mods — symlink each mod directory under ~/.config/herdr-app/mods/.
+# Linked one by one because Herdr ships its own mods in the same folder.
+if [ -d "$REPO_ROOT/herdr/mods" ]; then
+    mkdir -p "$HOME/.config/herdr-app/mods"
+    for mod_dir in "$REPO_ROOT/herdr/mods"/*/; do
+        mod_name="$(basename "$mod_dir")"
+        link_into "${mod_dir%/}" "$HOME/.config/herdr-app/mods/$mod_name"
+    done
+fi
+
 # Karabiner-Elements configuration (custom modifications).
 # Karabiner rewrites karabiner.json when settings change via its GUI, so the
 # symlink lets those edits flow back to the repo automatically.
